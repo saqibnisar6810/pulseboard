@@ -1,7 +1,6 @@
 import type { Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
 import { verifyToken } from "./auth.js";
-import { config } from "./config.js";
 import { onEventApplied } from "./domain/apply.js";
 import { liveKpis } from "./domain/metrics.js";
 import { Customer } from "./models.js";
@@ -40,5 +39,3 @@ export function startRealtime(server: HttpServer, origins: string[]) {
     }, 1000));
   });
 }
-
-export const allowedOrigins = () => [config.appUrl, "http://localhost:5173", "http://127.0.0.1:5173"];

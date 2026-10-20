@@ -15,4 +15,4 @@ COPY --from=build /app/server/package.json server/
 COPY --from=build /app/server/dist server/dist
 USER node
 EXPOSE 8080
-CMD ["node", "server/dist/index.js"]
+CMD ["node", "server/dist/main.js"]

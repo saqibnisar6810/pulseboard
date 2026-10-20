@@ -35,7 +35,7 @@ export async function download(path: string, fallbackName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-/** Free hosting sleeps when idle. This waits for the API to wake up. */
+/** Free hosting can start cold. This waits until the API and database answer. */
 export async function waitForApi(onSlow: () => void, signal: AbortSignal) {
   const slow = setTimeout(onSlow, 1500);
   try {

@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { requireAuth, signToken } from "../auth.js";
 import { Membership, User, Workspace } from "../models.js";
-import { createDemoSandbox, logIn, signUp } from "../domain/workspaces.js";
+import { cleanupExpired, createDemoSandbox, logIn, signUp } from "../domain/workspaces.js";
 
 export const authRoutes = Router();
 
@@ -34,7 +34,13 @@ authRoutes.post("/login", authLimiter, async (req, res) => {
   res.json({ token });
 });
 
+let lastSweep = 0;
 authRoutes.post("/demo", demoLimiter, async (_req, res) => {
+  // Serverless hosts have no background timer, so expired sandboxes are swept here too.
+  if (Date.now() - lastSweep > 30 * 60_000) {
+    lastSweep = Date.now();
+    await cleanupExpired().catch((e) => console.error("cleanup", e));
+  }
   const demo = await createDemoSandbox();
   res.status(201).json(demo);
 });

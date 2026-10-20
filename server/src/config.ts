@@ -40,7 +40,9 @@ export const config = {
   mongoUrl: normalizeMongoUri(required("MONGODB_URI", isProd ? undefined : "mongodb://127.0.0.1:27017/pulseboard")),
   jwtSecret: required("JWT_SECRET", isProd ? undefined : "dev-only-secret-change-me"),
   /** Where the React app lives (CORS + links in invites and Stripe redirects). */
-  appUrl: (process.env.APP_URL || "http://localhost:5173").replace(/\/$/, ""),
+  appUrl: (process.env.APP_URL || "http://localhost:5173").split(",")[0].trim().replace(/\/$/, ""),
+  /** Every origin allowed to call the API (APP_URL can be a comma-separated list). */
+  appOrigins: (process.env.APP_URL || "http://localhost:5173").split(",").map((u) => u.trim().replace(/\/$/, "")).filter(Boolean),
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
   /** Demo sandboxes are deleted after this many hours. */
@@ -48,3 +50,5 @@ export const config = {
   /** Seconds between simulated events in demo workspaces that someone is watching. */
   simulatorSeconds: Number(process.env.SIMULATOR_SECONDS || 3),
 };
+
+export const allowedOrigins = () => [...new Set([...config.appOrigins, "http://localhost:5173", "http://127.0.0.1:5173"])];

@@ -28,9 +28,9 @@ function WakeGate({ children }: { children: ReactNode }) {
     <div className="grid min-h-screen place-items-center bg-sage px-6 text-center">
       <div className="max-w-sm">
         <div className="flex justify-center"><Logo size={44} /></div>
-        <h1 className="mt-4 text-[22px] font-extrabold">{state === "down" ? "The demo server isn't responding" : "Waking up the demo server…"}</h1>
+        <h1 className="mt-4 text-[22px] font-extrabold">{state === "down" ? "The demo server isn't responding" : "Starting the demo server…"}</h1>
         <p className="mt-2 text-[15px] text-[#33443e]">
-          {state === "down" ? "Please try again in a minute." : "This demo runs on free hosting that sleeps when nobody's using it. It takes about 30 seconds to start."}
+          {state === "down" ? "Please try again in a minute." : "The first visit can take a few seconds while the server starts."}
         </p>
         {state === "waking" && <div className="mx-auto mt-5 h-1.5 w-48 overflow-hidden rounded-full bg-white/70"><div className="h-full w-1/3 animate-[pulse-bar_1.2s_ease-in-out_infinite] rounded-full bg-teal" /></div>}
       </div>

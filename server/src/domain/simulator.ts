@@ -22,7 +22,7 @@ async function pickOne(workspaceId: Types.ObjectId, filter: Record<string, unkno
   return (c ?? undefined) as { externalId: string; plan: Plan; mrr: number; seats: number; status: string } | undefined;
 }
 
-async function step(workspaceId: Types.ObjectId) {
+export async function step(workspaceId: Types.ObjectId) {
   const action = r.weighted([["signup", 30], ["convert", 20], ["upgrade", 16], ["downgrade", 4], ["churn", 5], ["fail", 6], ["paid", 19]] as const);
   switch (action) {
     case "signup": {
@@ -59,4 +59,22 @@ async function step(workspaceId: Types.ObjectId) {
       return applyEvent(workspaceId, { type: "payment.succeeded", customer: { id: c.externalId }, amount: c.mrr }, "simulator");
     }
   }
+}
+
+/**
+ * On-demand simulation for hosts without long-running processes (serverless).
+ * Called when an open dashboard polls: adds one event per elapsed interval
+ * (at most 3), and claims the slot atomically so parallel polls don't double up.
+ */
+export async function catchUp(workspaceId: string, intervalMs: number) {
+  if (!Types.ObjectId.isValid(workspaceId)) return;
+  const now = Date.now();
+  const before = await Workspace.findOneAndUpdate(
+    { _id: workspaceId, isDemo: true, $or: [{ lastSimAt: null }, { lastSimAt: { $lte: new Date(now - intervalMs) } }] },
+    { $set: { lastSimAt: new Date(now) } },
+  ).lean();
+  if (!before) return;
+  const elapsed = before.lastSimAt ? now - new Date(before.lastSimAt).getTime() : intervalMs;
+  const n = Math.min(3, Math.max(1, Math.floor(elapsed / intervalMs)));
+  for (let i = 0; i < n; i++) await step(new Types.ObjectId(workspaceId)).catch((e) => console.error("simulator", e));
 }

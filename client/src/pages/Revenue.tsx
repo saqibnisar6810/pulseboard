@@ -80,7 +80,7 @@ export function Revenue() {
   useEffect(() => { api<{ items: LiveEvent[] }>("/api/events?limit=8").then((r) => setFeed(r.items)).catch(() => {}); }, []);
 
   const { connected, kpis } = useLive((e) => {
-    setFeed((f) => [e, ...f].slice(0, 8));
+    setFeed((f) => (f.some((x) => x.id === e.id) ? f : [e, ...f].slice(0, 8)));
     setLastUpdate(Date.now());
     setToday((t) => t && {
       ...t,

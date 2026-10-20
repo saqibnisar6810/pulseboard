@@ -3,7 +3,8 @@ import { Types } from "mongoose";
 import { z } from "zod";
 import { atLeast, newToken, requireAuth, requireRole, sha256, signToken } from "../auth.js";
 import { config } from "../config.js";
-import { computeMetrics, RANGE_DAYS, type Range } from "../domain/metrics.js";
+import { computeMetrics, liveKpis, RANGE_DAYS, type Range } from "../domain/metrics.js";
+import { catchUp } from "../domain/simulator.js";
 import { newApiKey } from "../domain/workspaces.js";
 import { Customer, Event, EVENT_TYPES, Invite, Membership, PLANS, STATUSES, User, Workspace } from "../models.js";
 
@@ -91,6 +92,31 @@ appRoutes.get("/events", async (req, res) => {
   if (q.data.type !== "all") filter.type = q.data.type;
   const events = await Event.find(filter).sort({ at: -1 }).limit(q.data.limit).lean();
   res.json({ items: events.map(publicEvent) });
+});
+
+// --------------------------------------------------------------------- live
+
+/**
+ * Polling alternative to the Socket.io feed (used on serverless hosts).
+ * `after` is the id of the last event the client has; ids increase over time.
+ * Demo workspaces get their simulated events here, on demand.
+ */
+appRoutes.get("/live", async (req, res) => {
+  const after = String(req.query.after ?? "");
+  const workspaceId = ws(req);
+  await catchUp(req.auth!.workspaceId, config.simulatorSeconds * 1000);
+  if (!isId(after)) {
+    const last = await Event.findOne({ workspaceId }, { _id: 1 }).sort({ _id: -1 }).lean();
+    const customers = await Customer.find({ workspaceId }, { mrr: 1, status: 1 }).lean();
+    return res.json({ cursor: last ? String(last._id) : null, events: [], kpis: { ...liveKpis(customers), at: new Date().toISOString() } });
+  }
+  const events = await Event.find({ workspaceId, _id: { $gt: new Types.ObjectId(after) } }).sort({ _id: 1 }).limit(50).lean();
+  let kpis = null;
+  if (events.length) {
+    const customers = await Customer.find({ workspaceId }, { mrr: 1, status: 1 }).lean();
+    kpis = { ...liveKpis(customers), at: new Date().toISOString() };
+  }
+  res.json({ cursor: events.length ? String(events[events.length - 1]._id) : after, events: events.map(publicEvent), kpis });
 });
 
 // ------------------------------------------------------------------- export

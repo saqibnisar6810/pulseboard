@@ -38,6 +38,8 @@ const workspaceSchema = new Schema(
     name: { type: String, required: true, trim: true },
     isDemo: { type: Boolean, default: false },
     expiresAt: { type: Date, default: null },
+    /** When the demo simulator last added events (used for on-demand simulation). */
+    lastSimAt: { type: Date, default: null },
     // PulseBoard's own subscription (paid through Stripe test mode)
     billingPlan: { type: String, enum: ["free", "growth", "scale"], default: "free" },
     billingStatus: { type: String, enum: ["none", "active", "past_due", "canceling"], default: "none" },

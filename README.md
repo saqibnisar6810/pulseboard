@@ -4,18 +4,18 @@ Real-time revenue analytics for SaaS teams. MRR, churn, net revenue retention an
 
 ![PulseBoard](docs/cover.png)
 
-**Live demo:** https://pulseboard-demo.vercel.app
+**Live demo:** https://pulseboard-demo-gamma.vercel.app
 
 Click **Try the live demo** and you get a private sandbox with two years of realistic data for a made-up SaaS company. While you have it open, new events stream in every few seconds, so the numbers and the feed move. Sandboxes are deleted after 24 hours.
 
-> The API runs on a free container plan, which can sleep when idle. The first visit can take about 30 seconds while it wakes; the app shows a "waking up" screen during that time.
+> The hosted demo runs the API as a Vercel serverless function, so the live feed uses short polling there. Run the API as a normal Node server (Docker, Render, a VM) and set `VITE_REALTIME=socket` to get Socket.io push instead. Same events, same UI.
 
 ## What it does
 
 - **Revenue dashboard:** MRR, net revenue retention, monthly churn and ARPA, each compared with the previous period. Filter by plan and by 30 days, 90 days or 12 months.
 - **MRR movement chart:** new, expansion, contraction and churn per month (or week/day), plus MRR at the end of each period.
 - **Retention cohorts:** the share of each month's new customers still paying N months later.
-- **Live updates:** Socket.io pushes every event and fresh headline numbers to every open dashboard in the workspace.
+- **Live updates:** every new event and fresh headline numbers reach every open dashboard in the workspace, through Socket.io on a long-running server or through a cursor-based polling endpoint on serverless hosts.
 - **Customers:** search, filter by plan and status, sort, paginate, and open a timeline of each customer's events.
 - **Events API:** your backend posts six subscription event types with an API key; PulseBoard works out the MRR movement from them.
 - **Teams and roles:** owner, admin and viewer, enforced on the server. Invite links, role changes, removal.
@@ -32,7 +32,7 @@ flowchart LR
   S[Demo simulator] --> B
   B --> R[transition rules<br/>new / expansion / contraction / churn]
   R --> M[(MongoDB<br/>customers + events)]
-  R -- Socket.io --> D[Open dashboards]
+  R -- "Socket.io or /api/live polling" --> D[Open dashboards]
   D -- REST --> B
   M --> K[metrics: MRR, NRR, churn, cohorts]
 ```
@@ -47,10 +47,10 @@ flowchart LR
 | Part | Choice |
 |---|---|
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, Recharts, React Router |
-| API | Node.js, Express 5, Socket.io, Zod validation |
+| API | Node.js, Express 5, Socket.io (long-running mode), Zod validation |
 | Database | MongoDB with Mongoose (compound indexes per workspace) |
 | Billing | Stripe Checkout and webhooks (test mode) |
-| Hosting | Vercel (frontend), Docker container on Back4app (API), MongoDB Atlas (database) |
+| Hosting | Vercel (frontend + API as a serverless function), MongoDB Atlas (database). A Dockerfile and `render.yaml` are included for long-running hosts. |
 
 ## Events API
 
@@ -90,23 +90,25 @@ npm run dev -w client                   # app on http://localhost:5173
 
 ## Deploy (free)
 
-1. **MongoDB Atlas:** create a free M0 cluster and a database user, allow access from anywhere (`0.0.0.0/0`, since Render's free IPs change), and copy the connection string.
-2. **API:** any Docker host works with the root `Dockerfile` (listens on `PORT`, default 8080). The demo runs on Back4app Containers; `render.yaml` is included for Render. Set `MONGODB_URI`, `JWT_SECRET` and `APP_URL` (your Vercel URL). Stripe keys are optional.
-3. **Vercel:** import the repo with root directory `client` and set `VITE_API_URL` to the Render URL.
+1. **MongoDB Atlas:** create a free M0 cluster and a database user, allow access from anywhere (`0.0.0.0/0`, since serverless IPs change), and copy the connection string.
+2. **API on Vercel (serverless):** import the repo with root directory `server` (Vercel detects Express and uses the app exported from `src/index.ts`). Set `MONGODB_URI`, `JWT_SECRET` and `APP_URL` (your frontend URL). Stripe keys are optional.
+   *Or as a long-running server:* the root `Dockerfile` (or `render.yaml`) runs `src/main.ts`, which adds Socket.io, the demo simulator timer and the sandbox sweep.
+3. **Frontend on Vercel:** import the repo again with root directory `client` and set `VITE_API_URL` to the API URL. Add `VITE_REALTIME=socket` only when the API is a long-running server.
 4. **Stripe (optional):** add a webhook endpoint `https://<api-host>/api/stripe/webhook` for `checkout.session.completed`, `customer.subscription.deleted` and `invoice.payment_failed`, then set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
 
 ## Project structure
 
 ```
 server/src/
-  index.ts              Express app, Socket.io, simulator and cleanup timers
+  index.ts              the Express app (default export, used by Vercel), DB connection
+  main.ts               long-running server: Socket.io, simulator and cleanup timers
   models.ts             users, workspaces, memberships, invites, customers, events
   auth.ts               JWT, role middleware, hashing helpers
   realtime.ts           socket auth, rooms per workspace, live KPI pushes
   domain/apply.ts       event rules (pure) + persistence
   domain/metrics.ts     MRR, NRR, churn, ARPA, movement, cohorts
   domain/demo.ts        two years of realistic demo history, generated in memory
-  domain/simulator.ts   live events for open demo dashboards
+  domain/simulator.ts   live events for open demo dashboards (timer or on-demand)
   routes/               auth, app (metrics, customers, team), ingest, billing
 client/src/
   pages/                Revenue, Customers, Events, Settings, Login, Join

@@ -26,7 +26,7 @@ export function Events() {
   const { connected } = useLive((e) => {
     if (type !== "all" && e.type !== type) return;
     if (pausedRef.current) setQueued((q) => [e, ...q]);
-    else setItems((list) => [e, ...list].slice(0, 200));
+    else setItems((list) => (list.some((x) => x.id === e.id) ? list : [e, ...list].slice(0, 200)));
   });
 
   const resume = () => { setItems((list) => [...queued, ...list].slice(0, 200)); setQueued([]); setPaused(false); };
