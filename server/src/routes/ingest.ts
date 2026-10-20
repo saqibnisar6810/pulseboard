@@ -1,10 +1,10 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { sha256 } from "../auth.js";
 import { applyEvent, EventError, IncomingEvent } from "../domain/apply.js";
 import { Workspace } from "../models.js";
 import { publicEvent } from "./app.js";
+import { rateLimit } from "../vendor.js";
 
 /**
  * Public ingestion API. Your app sends subscription events here:

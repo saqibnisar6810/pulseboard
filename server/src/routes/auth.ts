@@ -1,9 +1,9 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { requireAuth, signToken } from "../auth.js";
 import { Membership, User, Workspace } from "../models.js";
 import { cleanupExpired, createDemoSandbox, logIn, signUp } from "../domain/workspaces.js";
+import { rateLimit } from "../vendor.js";
 
 export const authRoutes = Router();
 

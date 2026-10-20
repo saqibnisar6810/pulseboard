@@ -1,6 +1,5 @@
 import cors from "cors";
-import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
-import * as helmetModule from "helmet";
+import express, { type NextFunction, type Request, type Response } from "express";
 import mongoose from "mongoose";
 import { sha256 } from "./auth.js";
 import { allowedOrigins, config, maskMongoUri } from "./config.js";
@@ -9,6 +8,7 @@ import { appRoutes } from "./routes/app.js";
 import { authRoutes } from "./routes/auth.js";
 import { billingRoutes, stripeWebhook } from "./routes/billing.js";
 import { ingestRoutes } from "./routes/ingest.js";
+import { helmet } from "./vendor.js";
 
 /**
  * The HTTP API. This module only builds the Express app, so it runs both as a
@@ -28,10 +28,6 @@ export function connectDb() {
   }
   return connecting;
 }
-
-// helmet's default export is typed differently depending on the compiler's module mode
-// (Vercel's build uses its own), so resolve it once here.
-const helmet = ((helmetModule as unknown as { default?: unknown }).default ?? helmetModule) as () => RequestHandler;
 
 const app = express();
 app.set("trust proxy", 1); // behind the host's proxy: real client IPs for rate limits
