@@ -4,7 +4,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import helmet from "helmet";
 import mongoose from "mongoose";
 import { sha256 } from "./auth.js";
-import { config } from "./config.js";
+import { config, maskMongoUri } from "./config.js";
 import { tick } from "./domain/simulator.js";
 import { cleanupExpired } from "./domain/workspaces.js";
 import { Invite, Workspace } from "./models.js";
@@ -43,6 +43,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 async function main() {
+  console.log(`Connecting to ${maskMongoUri(config.mongoUrl)}`);
   await mongoose.connect(config.mongoUrl, { serverSelectionTimeoutMS: 15_000 });
   await mongoose.connection.syncIndexes().catch((e) => console.warn("Index sync:", e.message));
   const server = createServer(app);
