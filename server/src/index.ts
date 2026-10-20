@@ -1,6 +1,6 @@
 import cors from "cors";
-import express, { type NextFunction, type Request, type Response } from "express";
-import helmet from "helmet";
+import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
+import * as helmetModule from "helmet";
 import mongoose from "mongoose";
 import { sha256 } from "./auth.js";
 import { allowedOrigins, config, maskMongoUri } from "./config.js";
@@ -28,6 +28,10 @@ export function connectDb() {
   }
   return connecting;
 }
+
+// helmet's default export is typed differently depending on the compiler's module mode
+// (Vercel's build uses its own), so resolve it once here.
+const helmet = ((helmetModule as unknown as { default?: unknown }).default ?? helmetModule) as () => RequestHandler;
 
 const app = express();
 app.set("trust proxy", 1); // behind the host's proxy: real client IPs for rate limits
