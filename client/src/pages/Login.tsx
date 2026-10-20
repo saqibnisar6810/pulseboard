@@ -42,7 +42,7 @@ export function Login() {
           <h1 className="text-[36px] leading-[1.08] font-extrabold tracking-tight sm:text-[46px]">Revenue and usage analytics for SaaS teams, updating live.</h1>
           <p className="mt-4 text-[17px] text-[#33443e]">MRR, churn, net revenue retention and cohort retention from your subscription events, with a live feed of every signup, upgrade and cancellation.</p>
           <ul className="mt-6 grid gap-2 text-[15px] text-[#33443e] sm:grid-cols-2">
-            {["Live updates over WebSockets", "Owner, admin and viewer roles", "Events API for your backend", "Stripe billing (test mode)", "CSV export of any report", "Private demo with a year of data"].map((t) => (
+            {["Live updates every few seconds", "Owner, admin and viewer roles", "Events API for your backend", "Stripe billing (test mode)", "CSV export of any report", "Private demo with two years of data"].map((t) => (
               <li key={t} className="flex gap-2"><span className="text-teal">✓</span>{t}</li>
             ))}
           </ul>
