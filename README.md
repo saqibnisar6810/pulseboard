@@ -8,7 +8,7 @@ Real-time revenue analytics for SaaS teams. MRR, churn, net revenue retention an
 
 Click **Try the live demo** and you get a private sandbox with two years of realistic data for a made-up SaaS company. While you have it open, new events stream in every few seconds, so the numbers and the feed move. Sandboxes are deleted after 24 hours.
 
-> The API runs on Render's free plan, which sleeps when idle. The first visit can take about 30 seconds while it wakes; the app shows a "waking up" screen during that time.
+> The API runs on a free container plan, which can sleep when idle. The first visit can take about 30 seconds while it wakes; the app shows a "waking up" screen during that time.
 
 ## What it does
 
@@ -50,7 +50,7 @@ flowchart LR
 | API | Node.js, Express 5, Socket.io, Zod validation |
 | Database | MongoDB with Mongoose (compound indexes per workspace) |
 | Billing | Stripe Checkout and webhooks (test mode) |
-| Hosting | Vercel (frontend), Render (API), MongoDB Atlas (database) |
+| Hosting | Vercel (frontend), Docker container on Back4app (API), MongoDB Atlas (database) |
 
 ## Events API
 
@@ -91,7 +91,7 @@ npm run dev -w client                   # app on http://localhost:5173
 ## Deploy (free)
 
 1. **MongoDB Atlas:** create a free M0 cluster and a database user, allow access from anywhere (`0.0.0.0/0`, since Render's free IPs change), and copy the connection string.
-2. **Render:** New → Blueprint, pick this repo (it reads `render.yaml`). Set `MONGODB_URI` and `APP_URL` (your Vercel URL). Stripe keys are optional.
+2. **API:** any Docker host works with the root `Dockerfile` (listens on `PORT`, default 8080). The demo runs on Back4app Containers; `render.yaml` is included for Render. Set `MONGODB_URI`, `JWT_SECRET` and `APP_URL` (your Vercel URL). Stripe keys are optional.
 3. **Vercel:** import the repo with root directory `client` and set `VITE_API_URL` to the Render URL.
 4. **Stripe (optional):** add a webhook endpoint `https://<api-host>/api/stripe/webhook` for `checkout.session.completed`, `customer.subscription.deleted` and `invoice.payment_failed`, then set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
 
